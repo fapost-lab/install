@@ -32,11 +32,15 @@ jobs:
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         with:
-          path-to-signatures: .github/cla/signatures.json
+          # Signatures live on a branch of their own rather than on main: the
+          # action records one by committing it, and main requires a pull
+          # request with a green build — which a bot cannot produce. Pointing it
+          # at an unprotected branch keeps both rules intact.
+          path-to-signatures: signatures.json
           # The document itself, not the summary of it in the documentation —
           # what a contributor agrees to should be the authoritative text.
           path-to-document: https://github.com/fapost-lab/core/blob/main/CLA.md
-          branch: main
+          branch: cla-signatures
           allowlist: bpartner,dependabot[bot],github-actions[bot]
           custom-notsigned-prcomment: >
             Thanks for the pull request. Before it can be merged we need you to
