@@ -52,7 +52,8 @@ default. Supply the administrator's password with `FAPOST_ADMIN_PASSWORD` or
 | `--app-version TAG` | `latest` | Image tag to run. |
 | `--http-port PORT` | `8000` | Plain-HTTP port, when TLS is off. |
 | `--tls` / `--no-tls` | asked | Terminate TLS with the bundled Caddy. |
-| `--gateway` | off | Also run the optional Go webhook gateway. |
+| `--gateway` | off | Also run the Go webhook gateway, and point new channels at it. |
+| `--gateway-domain D` | `webhook.<domain>` | Hostname the gateway answers on. |
 | `--ref REF` | `main` | Branch or tag to fetch `compose.yaml` from. |
 | `--admin-password-file F` | — | Read the password from a file, or `-` for stdin. |
 | `-y`, `--yes` | — | Ask nothing. |
