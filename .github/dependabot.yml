@@ -1,0 +1,12 @@
+# Dependabot opens pull requests for outdated dependencies. Alerts alone only
+# tell you a problem exists; this is what proposes the fix.
+#
+# Only GitHub Actions here: this repository ships a shell script, so there is no
+# dependency manifest for anything else.
+
+version: 2
+updates:
+  - package-ecosystem: github-actions
+    directory: /
+    schedule:
+      interval: monthly
