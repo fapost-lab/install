@@ -1,0 +1,256 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Install FaPost Core</title>
+<meta name="description" content="One command to install FaPost Core with Docker Compose.">
+<link rel="canonical" href="https://get.fapost.in/">
+<style>
+  :root {
+    --bg: #fbfbfa;
+    --panel: #ffffff;
+    --ink: #16171a;
+    --muted: #6b6f76;
+    --line: #e4e4e1;
+    --accent: #1f6f4a;
+    --code-bg: #16171a;
+    --code-ink: #e8e8e6;
+    --code-accent: #7fd1a8;
+  }
+
+  @media (prefers-color-scheme: dark) {
+    :root {
+      --bg: #101113;
+      --panel: #17181b;
+      --ink: #ececea;
+      --muted: #9498a0;
+      --line: #2a2c31;
+      --accent: #7fd1a8;
+      --code-bg: #0a0b0c;
+      --code-ink: #e8e8e6;
+      --code-accent: #7fd1a8;
+    }
+  }
+
+  * { box-sizing: border-box; }
+
+  body {
+    margin: 0;
+    padding: 4rem 1.5rem 5rem;
+    background: var(--bg);
+    color: var(--ink);
+    font: 16px/1.65 ui-sans-serif, -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+    -webkit-font-smoothing: antialiased;
+  }
+
+  main { max-width: 46rem; margin: 0 auto; }
+
+  h1 {
+    margin: 0 0 .4rem;
+    font-size: 1.9rem;
+    font-weight: 620;
+    letter-spacing: -0.02em;
+  }
+
+  .lede { margin: 0 0 2.5rem; color: var(--muted); font-size: 1.05rem; }
+
+  h2 {
+    margin: 2.75rem 0 .9rem;
+    font-size: .78rem;
+    font-weight: 600;
+    letter-spacing: .09em;
+    text-transform: uppercase;
+    color: var(--muted);
+  }
+
+  /* The command is the page. Everything else is context for it. */
+  .command {
+    background: var(--code-bg);
+    border-radius: 10px;
+    padding: .6rem 0 1.15rem;
+  }
+
+  /* The button sits in a row of its own rather than floating over the code.
+     Absolute placement looks tidier until the command is wider than the screen,
+     at which point the text scrolls underneath it and the button covers the
+     middle of the very thing it copies. */
+  .command-bar {
+    display: flex;
+    justify-content: flex-end;
+    padding: 0 .7rem .35rem;
+  }
+
+  .command-code { overflow-x: auto; padding: 0 1.15rem; }
+
+  .command code {
+    display: block;
+    color: var(--code-ink);
+    font: .92rem/1.5 ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+    white-space: pre;
+  }
+
+  .command .prompt { color: var(--code-accent); user-select: none; }
+
+  .copy {
+    padding: .35rem .6rem;
+    border: 1px solid rgba(255,255,255,.18);
+    border-radius: 6px;
+    background: transparent;
+    color: var(--code-ink);
+    font: 500 .75rem/1 inherit;
+    font-family: inherit;
+    cursor: pointer;
+    opacity: .75;
+    transition: opacity .15s, border-color .15s;
+  }
+
+  .copy:hover { opacity: 1; border-color: rgba(255,255,255,.4); }
+  .copy[data-copied="yes"] { color: var(--code-accent); border-color: var(--code-accent); opacity: 1; }
+
+  ol.steps { margin: 0; padding-left: 1.2rem; color: var(--ink); }
+  ol.steps li { margin: .45rem 0; }
+  ol.steps li span { color: var(--muted); }
+
+  .note {
+    margin-top: 1rem;
+    padding: .9rem 1.1rem;
+    border-left: 2px solid var(--line);
+    color: var(--muted);
+    font-size: .93rem;
+  }
+
+  pre.secondary {
+    margin: 0;
+    padding: 1rem 1.15rem;
+    background: var(--panel);
+    border: 1px solid var(--line);
+    border-radius: 10px;
+    overflow-x: auto;
+    font: .87rem/1.55 ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+    color: var(--ink);
+  }
+
+  table { width: 100%; border-collapse: collapse; font-size: .95rem; }
+  td { padding: .5rem 0; border-bottom: 1px solid var(--line); vertical-align: top; }
+  td:first-child { width: 13rem; color: var(--muted); padding-right: 1rem; }
+  tr:last-child td { border-bottom: 0; }
+
+  code.inline {
+    padding: .12em .38em;
+    background: var(--panel);
+    border: 1px solid var(--line);
+    border-radius: 4px;
+    font: .88em ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+  }
+
+  a { color: var(--accent); text-decoration-thickness: 1px; text-underline-offset: 2px; }
+
+  footer {
+    margin-top: 4rem;
+    padding-top: 1.5rem;
+    border-top: 1px solid var(--line);
+    color: var(--muted);
+    font-size: .89rem;
+    display: flex;
+    gap: 1.5rem;
+    flex-wrap: wrap;
+  }
+</style>
+</head>
+<body>
+<main>
+
+  <h1>FaPost Core</h1>
+  <p class="lede">A platform for conversational assistants and flow automation. This installs it.</p>
+
+  <div class="command">
+    <div class="command-bar">
+      <button class="copy" type="button" id="copy">copy</button>
+    </div>
+    <div class="command-code">
+      <code id="cmd"><span class="prompt">$ </span>sh -c "$(curl -fsSL https://get.fapost.in/install.sh)"</code>
+    </div>
+  </div>
+
+  <p class="note">
+    Written as <code class="inline">sh -c "$(curl …)"</code> rather than
+    <code class="inline">curl … | sh</code> on purpose: the second form hands the
+    script itself to standard input, leaving nothing for the questions to be
+    answered on.
+  </p>
+
+  <h2>What it does</h2>
+  <ol class="steps">
+    <li>Checks Docker and the Compose plugin. <span>Nothing else is needed on the host — no PHP, no Composer, no Node.</span></li>
+    <li>Asks for your domain and administrator email. <span>Everything else has a default.</span></li>
+    <li>Generates the application key and the database and Redis passwords. <span>Written to a <code class="inline">.env</code> with mode 600.</span></li>
+    <li>Starts the stack and creates the first tenant. <span>The password goes in on standard input, so it never reaches a process list.</span></li>
+  </ol>
+
+  <p class="note">
+    It writes only inside the directory it creates. No packages are installed, no
+    services registered, nothing under <code class="inline">/etc</code> touched.
+  </p>
+
+  <h2>Requirements</h2>
+  <table>
+    <tr><td>Docker Engine</td><td>24 or newer, with the Compose plugin v2.23+</td></tr>
+    <tr><td>Host</td><td>4 GB RAM, 10 GB disk to start with</td></tr>
+    <tr><td>DNS</td><td>A base domain and the tenant host beneath it, both resolving to the machine</td></tr>
+  </table>
+
+  <h2>Unattended</h2>
+  <pre class="secondary">curl -fsSL https://get.fapost.in/install.sh -o install.sh
+sh install.sh --yes \
+  --domain fapost.example.com \
+  --admin-email ops@example.com</pre>
+  <p class="note">
+    Every question is also a flag. See <code class="inline">--help</code> for the
+    full list, or read the script — it is one file and it is meant to be read
+    before it is run.
+  </p>
+
+  <footer>
+    <a href="https://docs.fapost.in/self-hosting/docker-compose">Documentation</a>
+    <a href="https://github.com/fapost-lab/install">Source</a>
+    <a href="https://github.com/fapost-lab/core">FaPost Core</a>
+    <span>Apache-2.0</span>
+  </footer>
+
+</main>
+
+<script>
+  // Copies the command without the shell prompt, which is decoration.
+  document.getElementById('copy').addEventListener('click', function () {
+    var button = this;
+    var text = document.getElementById('cmd').textContent.replace(/^\$\s*/, '');
+
+    var done = function () {
+      button.textContent = 'copied';
+      button.dataset.copied = 'yes';
+      setTimeout(function () {
+        button.textContent = 'copy';
+        delete button.dataset.copied;
+      }, 1600);
+    };
+
+    if (navigator.clipboard && window.isSecureContext) {
+      navigator.clipboard.writeText(text).then(done, function () {});
+      return;
+    }
+
+    // http:// and older browsers, where the clipboard API is unavailable.
+    var field = document.createElement('textarea');
+    field.value = text;
+    field.setAttribute('readonly', '');
+    field.style.position = 'fixed';
+    field.style.opacity = '0';
+    document.body.appendChild(field);
+    field.select();
+    try { document.execCommand('copy'); done(); } catch (e) {}
+    document.body.removeChild(field);
+  });
+</script>
+</body>
+</html>
