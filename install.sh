@@ -36,6 +36,7 @@ ADMIN_PASSWORD_GENERATED="no"
 APP_VERSION="latest"
 USE_TLS=""
 USE_GATEWAY="no"
+GATEWAY_DOMAIN=""
 HTTP_PORT="8000"
 ASSUME_YES="no"
 
@@ -71,7 +72,10 @@ Options:
   --app-version TAG        Image tag to run. Default: latest
   --http-port PORT         Port for plain HTTP. Default: 8000
   --tls / --no-tls         Terminate TLS with the bundled Caddy, or not.
-  --gateway                Also run the optional Go webhook gateway.
+  --gateway                Also run the optional Go webhook gateway, and point
+                           newly registered channels at it.
+  --gateway-domain DOMAIN  Hostname the gateway answers on. With TLS it gets a
+                           certificate of its own; default webhook.<domain>.
   --ref REF                Branch or tag to fetch compose.yaml from. Default: main
   --admin-password-file F  Read the administrator's password from a file, or from
                            standard input when given as -. Also accepted in the
@@ -102,6 +106,7 @@ while [ $# -gt 0 ]; do
         --tls)                 USE_TLS="yes"; shift ;;
         --no-tls)              USE_TLS="no"; shift ;;
         --gateway)             USE_GATEWAY="yes"; shift ;;
+        --gateway-domain)      need_value "$1" "${2:-}"; GATEWAY_DOMAIN=$2; USE_GATEWAY="yes"; shift 2 ;;
         -y|--yes)              ASSUME_YES="yes"; shift ;;
         -h|--help)             usage; exit 0 ;;
         --version)             printf 'fapost-install %s\n' "$VERSION"; exit 0 ;;
@@ -322,6 +327,12 @@ if [ "$REUSE_ENV" = "no" ]; then
     if [ "$USE_TLS" = "no" ]; then
         HTTP_PORT=$(ask "Port to serve plain HTTP on" "$HTTP_PORT")
     fi
+
+    # Where the gateway answers. Providers are told this address when a channel
+    # is registered, so it has to be the public one rather than the container's.
+    if [ "$USE_GATEWAY" = "yes" ] && [ "$USE_TLS" = "yes" ] && [ -z "$GATEWAY_DOMAIN" ]; then
+        GATEWAY_DOMAIN=$(ask "Hostname for the webhook gateway" "webhook.$DOMAIN")
+    fi
 fi
 
 if [ "$REUSE_ENV" = "yes" ]; then
@@ -349,6 +360,19 @@ if [ "$REUSE_ENV" = "yes" ]; then
 fi
 
 PANEL_HOST="$TENANT_SLUG.$DOMAIN"
+
+# Computed once: the same address is written into the environment and printed at
+# the end, and the two disagreeing is exactly the kind of thing nobody notices
+# until a provider starts delivering into the void.
+GATEWAY_URL=""
+if [ "$USE_GATEWAY" = "yes" ]; then
+    if [ "$USE_TLS" = "yes" ]; then
+        [ -n "$GATEWAY_DOMAIN" ] || GATEWAY_DOMAIN="webhook.$DOMAIN"
+        GATEWAY_URL="https://$GATEWAY_DOMAIN"
+    else
+        GATEWAY_URL="http://$DOMAIN:${GATEWAY_PORT:-8080}"
+    fi
+fi
 
 # ─── The administrator's password ────────────────────────────────────────────
 
@@ -447,6 +471,18 @@ if [ "$REUSE_ENV" = "no" ]; then
         set_env HTTP_PORT "$HTTP_PORT"
     fi
 
+    # Running the container is not the same as using it. Without these two the
+    # gateway starts, answers nothing in particular, and the application goes on
+    # handling webhooks itself — a deployment that looks right and is not.
+    if [ "$USE_GATEWAY" = "yes" ]; then
+        set_env WEBHOOK_INGRESS_DRIVER gateway
+
+        # The address a provider is told to deliver to, so it is the host's
+        # own rather than the container's.
+        set_env WEBHOOK_GATEWAY_URL "$GATEWAY_URL"
+        [ "$USE_TLS" = "yes" ] && set_env GATEWAY_DOMAIN "$GATEWAY_DOMAIN"
+    fi
+
     umask "$previous_umask"
     chmod 600 "$ENV_PATH"
 
@@ -498,6 +534,28 @@ then
         --tenant-slug=$TENANT_SLUG --admin-email=$ADMIN_EMAIL"
 fi
 
+# ─── Webhook gateway ─────────────────────────────────────────────────────────
+
+if [ "$USE_GATEWAY" = "yes" ]; then
+    step "Webhook gateway"
+
+    # The gateway matches incoming requests against specs it reads from Redis.
+    # Until they are published it has nothing to route by and falls back to the
+    # application for every delivery, which is the slow path it exists to avoid.
+    if compose exec -T app php artisan ops:ingress-specs-publish; then
+        detail "ingress specs published"
+    else
+        warn "Publishing the ingress specs failed. The gateway will fall back to the
+application for every delivery until this succeeds:
+
+    cd $INSTALL_DIR && docker compose exec app php artisan ops:ingress-specs-publish"
+    fi
+
+    # Reports rather than decides: a fresh install has no channels yet, so some
+    # of what it checks is legitimately absent at this point.
+    compose exec -T app php artisan gateway:doctor || true
+fi
+
 # ─── Done ────────────────────────────────────────────────────────────────────
 
 if [ "$USE_TLS" = "yes" ]; then
@@ -520,6 +578,28 @@ cat <<EOF
   Both ${DOMAIN} and ${PANEL_HOST} must resolve to this host —
   the panel answers on the second one only.
 EOF
+
+if [ "$USE_GATEWAY" = "yes" ]; then
+    cat <<EOF
+
+  The webhook gateway is running, and channels registered from now on are
+  pointed at ${GATEWAY_URL}. Channels that already exist keep
+  going to the application until they are moved:
+
+      cd $INSTALL_DIR && docker compose exec app php artisan ops:ingress-migrate
+
+  It must resolve to this host too, or providers deliver nowhere.
+EOF
+
+    if [ "$USE_TLS" = "yes" ]; then
+        cat <<EOF
+
+  Note that GATEWAY_TRUSTED_PROXIES is unset. With Caddy in front, the gateway
+  therefore ignores X-Forwarded-For and rate-limits every caller as one — set it
+  to Caddy's address on the compose network once you know it.
+EOF
+    fi
+fi
 
 if [ "$USE_TLS" = "yes" ]; then
     cat <<EOF
