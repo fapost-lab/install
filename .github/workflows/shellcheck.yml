@@ -1,0 +1,33 @@
+# The installer is the first thing a new operator runs, and it runs as whatever
+# user has Docker. A syntax slip here is not a failing build somewhere — it is a
+# half-created installation directory on someone else's server.
+#
+# Checked as POSIX sh rather than bash on purpose: `sh -c "$(curl …)"` runs under
+# /bin/sh, which is dash on Debian and Ubuntu.
+
+name: Lint
+
+on:
+  push:
+    branches: ["main"]
+  pull_request:
+
+permissions:
+  contents: read
+
+jobs:
+  shellcheck:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: shellcheck
+        run: shellcheck --shell=sh install.sh
+
+      - name: parse with dash
+        run: |
+          sudo apt-get update -qq && sudo apt-get install -y -qq dash
+          dash -n install.sh
+
+      - name: --help works
+        run: sh install.sh --help
